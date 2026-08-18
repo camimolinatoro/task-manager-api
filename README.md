@@ -1,22 +1,39 @@
 ﻿# Task Manager API
 
-A simple REST API for task management, built with Express.js and SQLite, with a full Postman/Newman test suite.
+A REST API for task management with JWT authentication, built with Express.js and SQLite, with a full Postman/Newman test suite.
 
 ## Endpoints
 
-| Method | Endpoint          | Description          |
-|--------|-------------------|-----------------------|
-| GET    | /api/tasks        | Get all tasks         |
-| GET    | /api/tasks/:id    | Get a task by id      |
-| POST   | /api/tasks        | Create a new task     |
-| PUT    | /api/tasks/:id    | Update a task         |
-| DELETE | /api/tasks/:id    | Delete a task         |
+### Auth
+
+| Method | Endpoint            | Description                    |
+|--------|---------------------|----------------------------------|
+| POST   | /api/auth/register  | Register a new user             |
+| POST   | /api/auth/login     | Log in and receive a JWT token  |
+
+### Tasks (require Authorization: Bearer <token>)
+
+| Method | Endpoint          | Description                        |
+|--------|-------------------|--------------------------------------|
+| GET    | /api/tasks        | Get all tasks for the logged-in user |
+| GET    | /api/tasks/:id    | Get a task by id                     |
+| POST   | /api/tasks        | Create a new task                    |
+| PUT    | /api/tasks/:id    | Update a task                        |
+| DELETE | /api/tasks/:id    | Delete a task                        |
 
 ## Tech stack
 
 - Node.js + Express
 - SQLite (file-based database)
-- Postman + Newman (automated API testing, 16 assertions across 7 requests)
+- JWT authentication (jsonwebtoken)
+- Password hashing (bcrypt)
+- Postman + Newman (automated API testing, 19 assertions across 9 requests)
+
+## Security
+
+- Passwords are hashed with bcrypt before being stored, never saved in plain text
+- All task routes are protected by JWT authentication middleware
+- Tasks are private per user: every query is scoped to the authenticated user's id, so users cannot view or modify tasks that are not theirs, even if they guess a task id
 
 ## How to run it
 
@@ -36,13 +53,15 @@ npx newman run "Task Manager API.postman_collection.json" --env-var "base_url=ht
 
 ## Test coverage
 
+- User registration and login
 - Create task (success + missing title validation)
 - Get all tasks
 - Get task by id (success + not found)
 - Update task
 - Delete task
+- Access denied without a valid token
 
-16/16 assertions passing across 7 requests, covering both the happy path and error handling.
+19/19 assertions passing across 9 requests, covering authentication, the happy path, and error handling.
 
 ## Author
 
