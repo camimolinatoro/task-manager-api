@@ -1,0 +1,32 @@
+﻿name: API Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start server
+        run: npm start &
+
+      - name: Wait for server to be ready
+        run: sleep 3
+
+      - name: Run Postman tests with Newman
+        run: npx newman run "Task Manager API.postman_collection.json" --env-var "base_url=http://localhost:3000"

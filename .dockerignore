@@ -1,0 +1,5 @@
+﻿node_modules
+tasks.db
+.env
+.git
+*.postman_collection.json
