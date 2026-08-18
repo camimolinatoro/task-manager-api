@@ -100,3 +100,17 @@ locust -f locustfile.py --host=http://localhost:3000
 
 
 Then open http://localhost:8089, set the number of users and ramp-up rate, and start the test.
+
+## Contract Testing
+
+The API's response structure is validated against JSON Schema contracts to catch breaking changes early (wrong types, missing fields, unexpected structure).
+
+Contracts are defined in `contracts/` and validated with pytest + jsonschema.
+
+To run it:
+
+pip install requests jsonschema
+pytest tests_contract.py -v
+
+
+3/3 contract tests passing, covering the login response and task object structure (single item and list).
