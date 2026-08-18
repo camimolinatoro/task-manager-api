@@ -82,3 +82,21 @@ Camila Molina Toro, Systems Engineering student (UPB), focused on QA and softwar
 LinkedIn: https://www.linkedin.com/in/camilamolinatoro
 
 GitHub: https://github.com/camimolinatoro
+## Load Testing (Locust)
+
+The API was load-tested with Locust, simulating 20 concurrent users performing realistic actions: registering, logging in, listing tasks, creating tasks, and requesting a nonexistent task.
+
+![Locust Report](locust-report.png)
+
+Results with 20 concurrent users:
+- 259 total requests, 0% failure rate
+- Median response time: 15ms
+- 99th percentile: 140ms
+
+To run it:
+
+pip install locust
+locust -f locustfile.py --host=http://localhost:3000
+
+
+Then open http://localhost:8089, set the number of users and ramp-up rate, and start the test.
