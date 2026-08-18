@@ -75,13 +75,6 @@ Every push to `main` automatically triggers a GitHub Actions workflow that insta
 
 19/19 assertions passing across 9 requests, covering authentication, the happy path, and error handling.
 
-## Author
-
-Camila Molina Toro, Systems Engineering student (UPB), focused on QA and software development.
-
-LinkedIn: https://www.linkedin.com/in/camilamolinatoro
-
-GitHub: https://github.com/camimolinatoro
 ## Load Testing (Locust)
 
 The API was load-tested with Locust, simulating 20 concurrent users performing realistic actions: registering, logging in, listing tasks, creating tasks, and requesting a nonexistent task.
@@ -127,3 +120,12 @@ Changes involved:
 The full Postman/Newman test suite (19 assertions) passes against the cloud database, confirming the migration preserved all existing functionality.
 
 Requires a `DATABASE_URL` environment variable (see `.env.example`).
+
+
+## Author
+
+Camila Molina Toro, Systems Engineering student (UPB), focused on QA and software development.
+
+LinkedIn: https://www.linkedin.com/in/camilamolinatoro
+
+GitHub: https://github.com/camimolinatoro
