@@ -1,9 +1,10 @@
-﻿const express = require("express");
+const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
 const taskRoutes = require("./routes/taskRoutes");
 const authRoutes = require("./routes/authRoutes");
+const { initDb } = require("./db/database");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,13 @@ app.get("/", (req, res) => {
   res.json({ message: "Task Manager API is running" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to initialize database:", err.message);
+    process.exit(1);
+  });

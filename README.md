@@ -114,3 +114,16 @@ pytest tests_contract.py -v
 
 
 3/3 contract tests passing, covering the login response and task object structure (single item and list).
+
+## Cloud Database (PostgreSQL / Supabase)
+
+The API was migrated from a local SQLite file to a managed PostgreSQL database hosted on Supabase (São Paulo region), using the session pooler for IPv4 compatibility.
+
+Changes involved:
+- Rewriting all database queries from SQLite syntax to PostgreSQL (parameterized queries with `$1, $2`, `SERIAL` primary keys, `RETURNING` clauses)
+- Switching from callback-based queries to async/await with the `pg` connection pool
+- Database schema is initialized automatically on server startup
+
+The full Postman/Newman test suite (19 assertions) passes against the cloud database, confirming the migration preserved all existing functionality.
+
+Requires a `DATABASE_URL` environment variable (see `.env.example`).

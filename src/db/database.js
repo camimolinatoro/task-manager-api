@@ -1,30 +1,31 @@
-﻿const sqlite3 = require("sqlite3").verbose();
-const path = require("path");
+const { Pool } = require("pg");
+require("dotenv").config();
 
-const dbPath = path.join(__dirname, "tasks.db");
-const db = new sqlite3.Database(dbPath);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
-db.serialize(() => {
-  db.run(`
+async function initDb() {
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  db.run(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS tasks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
       title TEXT NOT NULL,
       description TEXT,
       completed INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
-});
+}
 
-module.exports = db;
+module.exports = { pool, initDb };

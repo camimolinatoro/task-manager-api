@@ -1,57 +1,78 @@
-﻿const db = require("../db/database");
+const { pool } = require("../db/database");
 
-function getAllTasks(req, res) {
-  db.all("SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC", [req.user.id], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+async function getAllTasks(req, res) {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM tasks WHERE user_id = $1 ORDER BY created_at DESC",
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
 
-function getTaskById(req, res) {
+async function getTaskById(req, res) {
   const { id } = req.params;
-  db.get("SELECT * FROM tasks WHERE id = ? AND user_id = ?", [id, req.user.id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ error: "Task not found" });
-    res.json(row);
-  });
+  try {
+    const result = await pool.query(
+      "SELECT * FROM tasks WHERE id = $1 AND user_id = $2",
+      [id, req.user.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Task not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
 
-function createTask(req, res) {
+async function createTask(req, res) {
   const { title, description } = req.body;
   if (!title) return res.status(400).json({ error: "Title is required" });
 
-  db.run(
-    "INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)",
-    [req.user.id, title, description || null],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ id: this.lastID, title, description, completed: 0 });
-    }
-  );
+  try {
+    const result = await pool.query(
+      "INSERT INTO tasks (user_id, title, description) VALUES ($1, $2, $3) RETURNING *",
+      [req.user.id, title, description || null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
 
-function updateTask(req, res) {
+async function updateTask(req, res) {
   const { id } = req.params;
   const { title, description, completed } = req.body;
 
-  db.run(
-    "UPDATE tasks SET title = COALESCE(?, title), description = COALESCE(?, description), completed = COALESCE(?, completed) WHERE id = ? AND user_id = ?",
-    [title, description, completed, id, req.user.id],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) return res.status(404).json({ error: "Task not found" });
-      res.json({ message: "Task updated" });
-    }
-  );
+  try {
+    const result = await pool.query(
+      `UPDATE tasks SET
+        title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        completed = COALESCE($3, completed)
+       WHERE id = $4 AND user_id = $5`,
+      [title, description, completed, id, req.user.id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: "Task not found" });
+    res.json({ message: "Task updated" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
 
-function deleteTask(req, res) {
+async function deleteTask(req, res) {
   const { id } = req.params;
-  db.run("DELETE FROM tasks WHERE id = ? AND user_id = ?", [id, req.user.id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    if (this.changes === 0) return res.status(404).json({ error: "Task not found" });
+  try {
+    const result = await pool.query(
+      "DELETE FROM tasks WHERE id = $1 AND user_id = $2",
+      [id, req.user.id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: "Task not found" });
     res.json({ message: "Task deleted" });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
 
 module.exports = { getAllTasks, getTaskById, createTask, updateTask, deleteTask };

@@ -1,62 +1,55 @@
-﻿const bcrypt = require("bcrypt");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const db = require("../db/database");
+const { pool } = require("../db/database");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-in-production";
 const SALT_ROUNDS = 10;
 
-function register(req, res) {
+async function register(req, res) {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
   }
-
   if (password.length < 6) {
     return res.status(400).json({ error: "Password must be at least 6 characters" });
   }
 
-  bcrypt.hash(password, SALT_ROUNDS, (err, hash) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    db.run(
-      "INSERT INTO users (email, password) VALUES (?, ?)",
-      [email, hash],
-      function (err) {
-        if (err) {
-          if (err.message.includes("UNIQUE constraint failed")) {
-            return res.status(409).json({ error: "Email already registered" });
-          }
-          return res.status(500).json({ error: err.message });
-        }
-        res.status(201).json({ id: this.lastID, email });
-      }
+  try {
+    const hash = await bcrypt.hash(password, SALT_ROUNDS);
+    const result = await pool.query(
+      "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email",
+      [email, hash]
     );
-  });
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    if (err.code === "23505") {
+      return res.status(409).json({ error: "Email already registered" });
+    }
+    res.status(500).json({ error: err.message });
+  }
 }
 
-function login(req, res) {
+async function login(req, res) {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
   }
 
-  db.get("SELECT * FROM users WHERE email = ?", [email], (err, user) => {
-    if (err) return res.status(500).json({ error: err.message });
+  try {
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    const user = result.rows[0];
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
-    bcrypt.compare(password, user.password, (err, match) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!match) return res.status(401).json({ error: "Invalid credentials" });
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ error: "Invalid credentials" });
 
-      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-        expiresIn: "24h",
-      });
-
-      res.json({ token });
-    });
-  });
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "24h" });
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
 
 module.exports = { register, login };
